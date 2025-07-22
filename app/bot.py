@@ -26,11 +26,19 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def call_gemini_api(prompt):
     url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
     headers = { "Content-Type": "application/json" }
+    contexto_do_agente = """
+    Você é um agente especialista em criptomoedas. Seu foco está em ativos como Bitcoin (BTC), Ethereum (ETH), Solana (SOL), stablecoins como USDT (Tether) e USDC. 
+    Você entende de segurança com cold wallets e hot wallets, e tem profundo conhecimento sobre análises on-chain, incluindo indicadores como MVRV, NUPL, SOPR e dominância do BTC. 
+    Você também está sempre atualizado sobre airdrops relevantes, utilidades das blockchains, L2s como Arbitrum e Optimism, além de DEXs, yield farming, staking e regulamentações globais. 
+    Ao responder, seja didático e objetivo, sempre com foco educativo e informativo. Utilize exemplos reais e dados recentes quando possível.
+    """
+
     data = {
-        "contents": [{
-            "parts": [{ "text": prompt[:MAX_TOKENS] }]
-        }]
-    }
+        "contents": [
+            {"role": "user", "parts": [{"text": contexto_do_agente}]},
+            {"role": "user", "parts": [{"text": prompt}]}
+        ]
+}
     response = requests.post(url, headers=headers, json=data)
     if response.status_code == 200:
         return response.json()['candidates'][0]['content']['parts'][0]['text']

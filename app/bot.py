@@ -1,38 +1,68 @@
+import os
 import logging
+import requests
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
-from app.gemini_agent import ask_gemini
+
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+MAX_TOKENS = 400
+
+COMMANDS = {
+    "/start": "Exibe mensagem inicial",
+    "/help": "Exibe comandos disponíveis",
+}
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("Olá! Sou um bot de cripto com Gemini AI. Use os comandos:\n/start\n/help")
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Olá! Sou um bot de cripto com Gemini. Use /help para ver comandos.")
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("Envie uma pergunta sobre criptomoedas (BTC, ETH, SOL, stablecoins, cold wallets, MVRV, airdrops, etc).")
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    commands_list = "\n".join([f"{cmd}: {desc}" for cmd, desc in COMMANDS.items()])
+    await update.message.reply_text(f"Comandos disponíveis:\n{commands_list}")
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    text = update.message.text
-    if text.startswith("/"):
-        await update.message.reply_text("Comando não reconhecido.")
+def call_gemini_api(prompt):
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
+    headers = { "Content-Type": "application/json" }
+    data = {
+        "contents": [{
+            "parts": [{ "text": prompt[:MAX_TOKENS] }]
+        }]
+    }
+    response = requests.post(url, headers=headers, json=data)
+    if response.status_code == 200:
+        return response.json()['candidates'][0]['content']['parts'][0]['text']
+    else:
+        logging.error(f"Erro Gemini: {response.status_code} - {response.text}")
+        return "Erro ao gerar resposta com Gemini."
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text.strip()
+    if not text.startswith("/"):
+        await update.message.reply_text("Use um comando. Veja /help")
         return
 
-    await update.message.reply_text("🔎 Processando sua pergunta...")
-    answer = ask_gemini(text)
-    await update.message.reply_text(answer)
+    if text == "/start":
+        await start(update, context)
+    elif text == "/help":
+        await help_command(update, context)
+    elif text.startswith("/ask"):
+        prompt = text.replace("/ask", "").strip()
+        if not prompt:
+            await update.message.reply_text("Use /ask seguido da sua pergunta.")
+            return
+        await update.message.reply_text("Pensando...")
+        reply = call_gemini_api(prompt)
+        await update.message.reply_text(reply)
+    else:
+        await update.message.reply_text("Comando não reconhecido. Use /help.")
 
-def main() -> None:
-    import os
-    TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-    if not TELEGRAM_TOKEN:
-        raise ValueError("Token do bot Telegram não encontrado!")
-
-    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-
+def main():
+    app = ApplicationBuilder().token(TOKEN).build()
+    app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-    logger.info("Bot está rodando...")
+    app.add_handler(CommandHandler("ask", handle_message))
     app.run_polling()

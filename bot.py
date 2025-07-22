@@ -8,7 +8,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, ContextTyp
 # Carregar variáveis de ambiente
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_API_KEY")
+TELEGRAM_API_KEY = os.getenv("TELEGRAM_API_KEY")
 
 # Cliente OpenAI
 client = OpenAI(api_key=OPENAI_API_KEY)

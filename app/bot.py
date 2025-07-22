@@ -24,7 +24,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"Comandos disponíveis:\n{commands_list}")
 
 def call_gemini_api(prompt):
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
     headers = { "Content-Type": "application/json" }
     data = {
         "contents": [{

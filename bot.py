@@ -23,27 +23,19 @@ AGENT_CONTEXT = (
 # Comando /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "👋 Olá! Eu sou o seu bot cripto.
-"
+        "👋 Olá! Eu sou o seu bot cripto."
         "Use o comando /help para ver como interagir comigo."
     )
 
 # Comando /help
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "ℹ️ Comandos disponíveis:
-"
-        "/start - Mensagem de boas-vindas
-"
-        "/help - Lista de comandos
-
-"
-        "Ou envie uma mensagem com sua dúvida sobre criptomoedas, como por exemplo:
-"
-        "- O que é MVRV?
-"
-        "- Qual a diferença entre USDT e USDC?
-"
+        "ℹ️ Comandos disponíveis:"
+        "/start - Mensagem de boas-vindas"
+        "/help - Lista de comandos"
+        "Ou envie uma mensagem com sua dúvida sobre criptomoedas, como por exemplo"
+        "- O que é MVRV?"
+        "- Qual a diferença entre USDT e USDC?"
         "- Como proteger meus ativos em cold wallet?"
     )
 

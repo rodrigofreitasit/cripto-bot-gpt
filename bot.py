@@ -42,7 +42,7 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def gerar_resposta(pergunta):
     resposta = openai.ChatCompletion.create(
-        model="gpt-4-turbo",
+        model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": AGENTE_PROMPT},
             {"role": "user", "content": pergunta}

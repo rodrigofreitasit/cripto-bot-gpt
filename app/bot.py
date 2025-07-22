@@ -38,7 +38,7 @@ def call_gemini_api(prompt):
             {"role": "user", "parts": [{"text": contexto_do_agente}]},
             {"role": "user", "parts": [{"text": prompt}]}
         ]
-}
+    }
     response = requests.post(url, headers=headers, json=data)
     if response.status_code == 200:
         return response.json()['candidates'][0]['content']['parts'][0]['text']

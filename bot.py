@@ -1,69 +1,62 @@
 
 import os
-import logging
 import openai
+from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-from dotenv import load_dotenv
+import logging
 
-# Carregar variáveis de ambiente
 load_dotenv()
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# Configurações da OpenAI
-openai.api_key = OPENAI_API_KEY
+openai.api_key = os.getenv("OPENAI_API_KEY")
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
-# Logging
-logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+# Prompt de contexto do agente
+AGENT_CONTEXT = (
+    "Você é um especialista em criptomoedas. Seu conhecimento cobre Bitcoin (BTC), "
+    "Ethereum (ETH), Solana (SOL), stablecoins como Tether (USDT) e USDC, uso de cold wallets, "
+    "análise de métricas como MVRV e também oportunidades como airdrops. "
+    "Responda sempre com clareza, evite jargões desnecessários e traga exemplos reais sempre que possível."
+)
 
-# Comando /pergunta
+logging.basicConfig(level=logging.INFO)
+
 async def pergunta(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_input = " ".join(context.args)
-    if not user_input:
-        await update.message.reply_text("Por favor, envie sua pergunta após o comando /pergunta.")
+    user_message = " ".join(context.args)
+    if not user_message:
+        await update.message.reply_text("Use o comando assim: /pergunta Qual a diferença entre BTC e ETH?")
         return
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": user_input}],
-            max_tokens=300,
-            temperature=0.7,
-        )
-        answer = response.choices[0].message.content
-        await update.message.reply_text(answer)
-    except Exception as e:
-        await update.message.reply_text(f"Erro ao consultar a IA: {e}")
 
-# Comando /analise
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        max_tokens=300,
+        messages=[
+            {"role": "system", "content": AGENT_CONTEXT},
+            {"role": "user", "content": user_message}
+        ]
+    )
+
+    await update.message.reply_text(response["choices"][0]["message"]["content"])
+
 async def analise(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_input = " ".join(context.args)
-    if not user_input:
-        await update.message.reply_text("Por favor, envie o ativo que deseja analisar após o comando /analise.")
+    user_message = " ".join(context.args)
+    if not user_message:
+        await update.message.reply_text("Use o comando assim: /analise Faça uma análise do token SOL hoje")
         return
-    try:
-        prompt = f"Realize uma análise completa sobre: {user_input}. Considere aspectos técnicos, sentimento de mercado e fundamentos."
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=300,
-            temperature=0.7,
-        )
-        answer = response.choices[0].message.content
-        await update.message.reply_text(answer)
-    except Exception as e:
-        await update.message.reply_text(f"Erro ao realizar análise: {e}")
 
-# Comando de fallback
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Olá! Use os comandos:
-/pergunta + sua dúvida
-/analise + ativo de cripto")
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        max_tokens=300,
+        messages=[
+            {"role": "system", "content": AGENT_CONTEXT},
+            {"role": "user", "content": f"Faça uma análise cripto sobre: {user_message}"}
+        ]
+    )
 
-# Iniciar bot
+    await update.message.reply_text(response["choices"][0]["message"]["content"])
+
 def main():
-    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("pergunta", pergunta))
     app.add_handler(CommandHandler("analise", analise))
     app.run_polling()

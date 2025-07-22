@@ -5,7 +5,7 @@ import os
 
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
-model = genai.GenerativeModel("models/gemini-pro")
+model = genai.GenerativeModel("models/gemini-2.5-flash")
 
 def generate_response(context_messages, user_input):
     messages = [f"Usuário: {u}\nBot: {b}" for u, b in context_messages]
